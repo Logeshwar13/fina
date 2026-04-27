@@ -121,18 +121,22 @@ PORT=8000
 
 1. Go to your Supabase project
 2. Click "SQL Editor"
-3. Open `backend/data/create_insurance_tables_supabase.sql`
+3. Open `backend/data/complete_database_schema.sql` from this repository
 4. Copy the entire SQL content
 5. Paste into Supabase SQL Editor
 6. Click "Run"
 
 This creates all necessary tables:
-- `users`
-- `transactions`
-- `budgets`
-- `risk_scores`
-- `insurance_policies`
-- `insurance_risk_assessments`
+- `users` - User profiles and income
+- `transactions` - Financial transactions
+- `budgets` - Budget limits by category
+- `risk_scores` - Financial health assessments
+- `insurance_policies` - Insurance policies
+- `insurance_risk_assessments` - Insurance needs assessments
+
+**Alternative**: You can also use individual schema files:
+- `backend/data/create_tables_supabase.py` - Core tables
+- `backend/data/create_insurance_tables_supabase.sql` - Insurance tables
 
 ### Step 4: Run with Docker
 
