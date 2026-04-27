@@ -1,0 +1,50 @@
+# MCP Phase 1 Dependencies
+# =========================
+
+# Existing dependencies (keep these)
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-dotenv>=1.0.0
+supabase>=2.0.0
+pydantic>=2.4.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# NEW: LLM Providers
+openai>=1.3.0  # Also used for Groq (OpenAI-compatible API)
+anthropic>=0.18.0  # Optional
+sentence-transformers>=2.2.0  # For embeddings with Groq
+
+# NEW: Vector Store
+faiss-cpu>=1.7.4
+
+# NEW: Async Support
+aiohttp>=3.9.0
+asyncio
+
+# NEW: Testing (for Phase 7)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# NEW: Observability (for Phase 6)
+structlog>=23.1.0
+prometheus-client>=0.17.0
+
+# NEW: Production (for Phase 8)
+gunicorn>=21.2.0
+python-multipart>=0.0.6
+
+# Phase 2: RAG Pipeline Dependencies
+# ===================================
+
+# Text Processing & Embeddings
+transformers>=4.30.0  # For advanced NLP
+torch>=2.0.0  # Required by sentence-transformers
+
+# Already included above:
+# - sentence-transformers>=2.2.0
+# - faiss-cpu>=1.7.4
+# - numpy>=1.24.0
