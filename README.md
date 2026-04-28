@@ -590,7 +590,7 @@ This project is licensed under the MIT License.
 
 ---
 
-**Built with ❤️ by the FinA Team**
+**Built by LOGESHWAR**
 
 **Version**: 1.0.0  
 **Last Updated**: April 28, 2026  
