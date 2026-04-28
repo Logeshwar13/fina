@@ -7,7 +7,53 @@ A comprehensive personal finance management platform powered by multi-agent AI s
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
 
-## 🌟 Features
+---
+
+## Architecture Overview
+
+![FinA Architecture Diagram](docs/Architecture_Diagram.png)
+
+---
+
+## Pipeline Stages
+
+| Step | Agent | Description |
+|------|-------|-------------|
+| 1 | **QueryPlanner** | Receives user natural language query. Detects intent (BUDGET / FRAUD / RISK / INVESTMENT / INSURANCE). Routes to one or multiple agents. No LLM call — pure keyword routing. |
+| 2 | **Guardrails (Input)** | Pre-LLM validation. Detects XSS, SQL injection, excessive amounts, invalid queries. Sanitizes input before any agent sees it. Zero LLM cost. |
+| 3 | **RAG Retrieval** | Embeds query → searches FAISS vector DB → retrieves top-5 relevant transactions/budgets/policies. Injects context into agent prompt. |
+| 4 | **BudgetAgent** | `[Direct LLM + Tools]` Handles spending queries, budget creation/update/delete, transaction management. Tools: `get_transactions`, `create_budget`, `update_transaction`, `analyze_budget_trends`. |
+| 5 | **FraudAgent** | `[ML + LLM]` Isolation Forest ML model scores each transaction. LLM interprets patterns. Tools: `get_fraud_alerts`, `flag_transaction_fraud`, `detect_patterns`. |
+| 6 | **RiskAgent** | `[Direct LLM]` Calculates financial health score (0–100, grade A–F). Analyzes debt-to-income ratio, emergency fund, spending stability. Tools: `get_risk_score`, `calculate_health_metrics`. |
+| 7 | **InvestmentAgent** | `[Direct LLM]` Analyzes investment capacity, recommends portfolio allocation. Tools: `get_transactions`, `get_risk_score`, `analyze_investments`. |
+| 8 | **InsuranceAgent** | `[Direct LLM]` Assesses coverage needs, recommends policies, calculates premiums. Tools: `get_insurance_policies`, `assess_coverage`, `save_assessment`. |
+| 9 | **ResponseSynthesizer** | Combines outputs from multiple agents into one coherent response using LLM. Applies post-processing for concise/detailed/balanced formatting. |
+| 10 | **Guardrails (Output)** | Post-LLM validation. Removes hallucinations, verifies data accuracy, adds disclaimers for investment/insurance advice. |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **LLM** | Groq — `llama-3.3-70b-versatile` (free tier, 100K tokens/day) |
+| **Agent Framework** | Custom multi-agent system with Agentic Loop (Plan → Act → Observe → Reflect → Respond) |
+| **MCP Architecture** | Custom Model-Context-Protocol (Model Layer · Context Layer · Protocol Layer) |
+| **RAG Pipeline** | FAISS vector DB · sentence-transformers · custom chunker/embedder/retriever |
+| **Backend API** | FastAPI + Uvicorn (port 8000) · 30+ REST endpoints · WebSocket |
+| **Frontend** | Vanilla JS (ES6+) · Custom CSS · Nginx (reverse proxy) |
+| **Database** | Supabase (PostgreSQL) · 6 tables · Row-Level Security (RLS) |
+| **Vector Store** | FAISS · 1536 dimensions · persistent index |
+| **Cache** | Redis |
+| **ML Models** | Isolation Forest (fraud) · Logistic Regression (categorization) · Custom risk scorer |
+| **Guardrails** | Input Validator · Prompt Constraints · Output Validator · XSS/SQL injection prevention |
+| **Observability** | Prometheus metrics · Grafana dashboards · Structured JSON logging · Distributed tracing |
+| **Containerization** | Docker · Docker Compose (5 services) |
+| **Testing** | pytest · 181+ tests · 70%+ coverage |
+
+---
+
+## ≡ƒîƒ Features
 
 - **Multi-Agent AI System**: 5 specialized AI agents (Budget, Fraud, Risk, Investment, Insurance)
 - **Natural Language Interface**: Chat with AI to manage your finances
@@ -20,7 +66,7 @@ A comprehensive personal finance management platform powered by multi-agent AI s
 - **RAG Pipeline**: Context-aware responses using vector embeddings
 - **Observability**: Metrics, logging, and distributed tracing
 
-## 🏗️ Architecture Deep Dive
+## ≡ƒÅù∩╕Å Architecture Deep Dive
 
 ### MCP (Model-Context-Protocol) Architecture
 
@@ -49,7 +95,7 @@ FinA implements a true MCP architecture with three distinct layers:
 FinA uses RAG to provide accurate, data-grounded responses:
 
 ```
-User Query → Embed Query → Search Vectors → Retrieve Context → LLM + Context → Response
+User Query ΓåÆ Embed Query ΓåÆ Search Vectors ΓåÆ Retrieve Context ΓåÆ LLM + Context ΓåÆ Response
 ```
 
 **How it works:**
@@ -70,7 +116,7 @@ User Query → Embed Query → Search Vectors → Retrieve Context → LLM + Con
 Queries are intelligently routed to specialized agents:
 
 ```
-User Query → Query Planner → Agent Selection → Parallel Execution → Response Synthesis
+User Query ΓåÆ Query Planner ΓåÆ Agent Selection ΓåÆ Parallel Execution ΓåÆ Response Synthesis
 ```
 
 **Agent Capabilities:**
@@ -96,14 +142,14 @@ Each agent follows a 5-step reasoning cycle:
 4. **REFLECT**: Analyze observations, generate insights, identify patterns
 5. **RESPOND**: Format answer, add recommendations, apply guardrails
 
-**Example**: "Create a budget for Food with ₹15,000"
+**Example**: "Create a budget for Food with Γé╣15,000"
 - PLAN: Detect "create budget" intent, select `create_budget` tool
 - ACT: Execute `create_budget(category="Food", limit=15000)`
 - OBSERVE: Tool returns success, budget ID created
 - REFLECT: Budget created successfully, user can now track spending
-- RESPOND: "✅ Budget created! Food: ₹15,000/month. I'll help you track your spending."
+- RESPOND: "Γ£à Budget created! Food: Γé╣15,000/month. I'll help you track your spending."
 
-## 📋 Prerequisites
+## ≡ƒôï Prerequisites
 
 Before you begin, ensure you have the following installed:
 
@@ -119,7 +165,7 @@ Before you begin, ensure you have the following installed:
   - Sign up: https://console.groq.com
   - Create an API key
 
-## 🚀 Quick Start (5 Minutes)
+## ≡ƒÜÇ Quick Start (5 Minutes)
 
 ### Step 1: Clone the Repository
 
@@ -148,10 +194,10 @@ SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 **Where to find these values:**
 1. Go to your Supabase project dashboard
-2. Click "Settings" → "API"
+2. Click "Settings" ΓåÆ "API"
 3. Copy:
-   - **Project URL** → `SUPABASE_URL`
-   - **anon/public key** → `SUPABASE_ANON_KEY`
+   - **Project URL** ΓåÆ `SUPABASE_URL`
+   - **anon/public key** ΓåÆ `SUPABASE_ANON_KEY`
 
 #### 2.2 Create Backend .env File
 
@@ -183,22 +229,22 @@ PORT=8000
 **Where to find these values:**
 
 **Supabase:**
-1. Go to Supabase Dashboard → Settings → API
+1. Go to Supabase Dashboard ΓåÆ Settings ΓåÆ API
 2. Copy:
-   - **Project URL** → `SUPABASE_URL`
-   - **anon/public key** → `SUPABASE_KEY` and `SUPABASE_ANON_KEY`
-   - **service_role key** → `SUPABASE_SERVICE_KEY`
+   - **Project URL** ΓåÆ `SUPABASE_URL`
+   - **anon/public key** ΓåÆ `SUPABASE_KEY` and `SUPABASE_ANON_KEY`
+   - **service_role key** ΓåÆ `SUPABASE_SERVICE_KEY`
 
-3. Go to Settings → Database → Connection String
+3. Go to Settings ΓåÆ Database ΓåÆ Connection String
 4. Select "Session pooler" and copy the connection string
-5. Replace `[YOUR-PASSWORD]` with your database password → `DATABASE_URL`
+5. Replace `[YOUR-PASSWORD]` with your database password ΓåÆ `DATABASE_URL`
 
 **Groq:**
 1. Go to https://console.groq.com
 2. Sign up (free, no credit card required)
 3. Go to "API Keys" section
 4. Click "Create API Key"
-5. Copy the key (starts with `gsk_...`) → `GROQ_API_KEY`
+5. Copy the key (starts with `gsk_...`) ΓåÆ `GROQ_API_KEY`
 
 ### Step 3: Setup Database Tables
 
@@ -223,7 +269,7 @@ This creates all necessary tables:
 
 ### Step 4: Run with Docker
 
-## � Docker Commands
+## ∩┐╜ Docker Commands
 
 ### Start Services
 
@@ -261,7 +307,7 @@ docker-compose restart
 docker-compose restart backend
 ```
 
-### ⚠️ Updating API Keys or Environment Variables
+### ΓÜá∩╕Å Updating API Keys or Environment Variables
 
 > **IMPORTANT**: A simple `docker-compose restart` does NOT reload `.env` file changes.
 > You must do a full stop + start to force Docker to pick up new environment variables.
@@ -339,7 +385,7 @@ Open your browser and navigate to:
 4. Verify email (check Supabase Auth)
 5. Login and start using FinA!
 
-## 📖 User Guide
+## ≡ƒôû User Guide
 
 ### Getting Started
 
@@ -379,13 +425,13 @@ After logging in, you'll see the Dashboard with:
 - **Recent Transactions**: List of your latest transactions
 
 **Navigation Menu:**
-- 🏠 Dashboard - Overview of your finances
-- 💰 Transactions - Manage all transactions
-- 📊 Budget - Set and track budgets
-- 🤖 AI Chat - Talk to your AI financial advisor
-- 🛡️ Fraud Detection - Security alerts
-- 📈 Risk Assessment - Financial health score
-- 🏥 Insurance - Manage insurance policies
+- ≡ƒÅá Dashboard - Overview of your finances
+- ≡ƒÆ░ Transactions - Manage all transactions
+- ≡ƒôè Budget - Set and track budgets
+- ≡ƒñû AI Chat - Talk to your AI financial advisor
+- ≡ƒ¢í∩╕Å Fraud Detection - Security alerts
+- ≡ƒôê Risk Assessment - Financial health score
+- ≡ƒÅÑ Insurance - Manage insurance policies
 
 #### 3. Managing Transactions
 
@@ -413,7 +459,7 @@ After logging in, you'll see the Dashboard with:
 
 **Using AI to Add Transactions:**
 1. Go to "AI Chat"
-2. Type: "Add a transaction of ₹500 for food at Starbucks"
+2. Type: "Add a transaction of Γé╣500 for food at Starbucks"
 3. AI will create the transaction for you!
 
 #### 4. Setting Up Budgets
@@ -422,18 +468,18 @@ After logging in, you'll see the Dashboard with:
 1. Click "Budget" in the menu
 2. Click "Add Budget" button
 3. Select category (Food, Transport, Shopping, etc.)
-4. Enter monthly limit (e.g., ₹15,000)
+4. Enter monthly limit (e.g., Γé╣15,000)
 5. Click "Save"
 
 **Using AI to Create Budgets:**
 1. Go to "AI Chat"
-2. Type: "Create a budget for Food with ₹15,000"
+2. Type: "Create a budget for Food with Γé╣15,000"
 3. AI will set up the budget for you!
 
 **Track Budget Progress:**
-- Green: Under 50% spent ✅
-- Yellow: 50-80% spent ⚠️
-- Red: Over 80% spent 🚨
+- Green: Under 50% spent Γ£à
+- Yellow: 50-80% spent ΓÜá∩╕Å
+- Red: Over 80% spent ≡ƒÜ¿
 
 **Edit/Delete Budgets:**
 - Click the edit icon to modify budget limits
@@ -453,12 +499,12 @@ The AI Chat is your personal financial advisor powered by 5 specialized agents.
 
 **Budget Questions:**
 - "How much did I spend on food last month?"
-- "Create a budget for Entertainment with ₹10,000"
+- "Create a budget for Entertainment with Γé╣10,000"
 - "Am I overspending on shopping?"
 - "Show my spending trends"
 
 **Transaction Questions:**
-- "Add a transaction of ₹650 for food at Alzyd"
+- "Add a transaction of Γé╣650 for food at Alzyd"
 - "Edit the last transaction to income"
 - "Show my recent expenses"
 - "What did I spend on transport this week?"
@@ -475,7 +521,7 @@ The AI Chat is your personal financial advisor powered by 5 specialized agents.
 - "How can I improve my financial health?"
 
 **Investment Advice:**
-- "Should I invest ₹50,000?"
+- "Should I invest Γé╣50,000?"
 - "What's my investment capacity?"
 - "Recommend an investment portfolio"
 
@@ -485,11 +531,11 @@ The AI Chat is your personal financial advisor powered by 5 specialized agents.
 - "What insurance coverage do I need?"
 
 **Chat Features:**
-- 💬 Multi-turn conversations (AI remembers context)
-- 📊 Data-grounded responses (uses your actual data)
-- 🎯 Actionable recommendations
-- 📝 Chat history saved automatically
-- 🗑️ Clear history button to start fresh
+- ≡ƒÆ¼ Multi-turn conversations (AI remembers context)
+- ≡ƒôè Data-grounded responses (uses your actual data)
+- ≡ƒÄ» Actionable recommendations
+- ≡ƒô¥ Chat history saved automatically
+- ≡ƒùæ∩╕Å Clear history button to start fresh
 
 #### 6. Fraud Detection
 
@@ -598,11 +644,11 @@ The AI Chat is your personal financial advisor powered by 5 specialized agents.
 - Check if data is loading in Network tab (F12)
 
 **General Tips:**
-- 🔄 **Always try hard refresh first**: `Ctrl + Shift + R` (Windows) or `Cmd + Shift + R` (Mac)
-- 🔍 **Check browser console**: Press F12 to see error messages
-- 📋 **Check backend logs**: `docker logs fina-backend --follow`
-- 🔌 **Verify services are running**: `docker ps`
-- 🔁 **Restart if needed**: `docker-compose restart`
+- ≡ƒöä **Always try hard refresh first**: `Ctrl + Shift + R` (Windows) or `Cmd + Shift + R` (Mac)
+- ≡ƒöì **Check browser console**: Press F12 to see error messages
+- ≡ƒôï **Check backend logs**: `docker logs fina-backend --follow`
+- ≡ƒöî **Verify services are running**: `docker ps`
+- ≡ƒöü **Restart if needed**: `docker-compose restart`
 
 #### 10. Best Practices
 
@@ -632,7 +678,7 @@ The AI Chat is your personal financial advisor powered by 5 specialized agents.
 - Keep browser updated
 - Use hard refresh when needed
 
-## 🔧 Development Setup
+## ≡ƒöº Development Setup
 
 ### Running Locally (Without Docker)
 
@@ -671,17 +717,17 @@ python -m http.server 8080
 npx http-server . -p 8080
 ```
 
-## 📝 Environment Variables Reference
+## ≡ƒô¥ Environment Variables Reference
 
 ### Required Variables
 
 | Variable | Description | Where to Find |
 |----------|-------------|---------------|
-| `SUPABASE_URL` | Your Supabase project URL | Supabase Dashboard → Settings → API |
-| `SUPABASE_KEY` | Supabase anon/public key | Supabase Dashboard → Settings → API |
-| `SUPABASE_SERVICE_KEY` | Supabase service role key | Supabase Dashboard → Settings → API |
-| `DATABASE_URL` | PostgreSQL connection string | Supabase Dashboard → Settings → Database |
-| `GROQ_API_KEY` | Groq LLM API key | https://console.groq.com → API Keys |
+| `SUPABASE_URL` | Your Supabase project URL | Supabase Dashboard ΓåÆ Settings ΓåÆ API |
+| `SUPABASE_KEY` | Supabase anon/public key | Supabase Dashboard ΓåÆ Settings ΓåÆ API |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key | Supabase Dashboard ΓåÆ Settings ΓåÆ API |
+| `DATABASE_URL` | PostgreSQL connection string | Supabase Dashboard ΓåÆ Settings ΓåÆ Database |
+| `GROQ_API_KEY` | Groq LLM API key | https://console.groq.com ΓåÆ API Keys |
 
 ### Optional Variables
 
@@ -700,7 +746,7 @@ npx http-server . -p 8080
 curl http://localhost:8000/health
 ```
 
-## 🧪 Testing
+## ≡ƒº¬ Testing
 
 ### Run Tests
 
@@ -735,7 +781,7 @@ curl -X POST http://localhost:8000/ai/chat \
   -d '{"query": "Create a budget for Food with 10000", "user_id": "YOUR_USER_ID"}'
 ```
 
-## 📚 Documentation
+## ≡ƒôÜ Documentation
 
 Comprehensive documentation is available in the `docs/` directory:
 
@@ -751,7 +797,7 @@ Comprehensive documentation is available in the `docs/` directory:
 
 
 
-## 🔍 Troubleshooting
+## ≡ƒöì Troubleshooting
 
 ### Backend won't start
 
@@ -815,7 +861,7 @@ pip install -r requirements.txt --force-reinstall
 # Or upgrade to paid tier at https://console.groq.com
 ```
 
-## 🛠️ Common Tasks
+## ≡ƒ¢á∩╕Å Common Tasks
 
 ### Update Dependencies
 
@@ -827,7 +873,7 @@ pip install -r requirements.txt --upgrade
 ### Clear Database
 
 ```bash
-# Go to Supabase Dashboard → SQL Editor
+# Go to Supabase Dashboard ΓåÆ SQL Editor
 # Run: TRUNCATE TABLE transactions, budgets, risk_scores CASCADE;
 ```
 
@@ -851,31 +897,31 @@ docker-compose up -d --build
 3. Add Prometheus data source: http://prometheus:9090
 4. Import dashboards from `docs/grafana/`
 
-## 📊 Project Structure
+## ≡ƒôè Project Structure
 
 ```
 rag_p1/
-├── backend/              # Backend application
-│   ├── agents/          # AI agents
-│   ├── api/             # API endpoints
-│   ├── database/        # Database models
-│   ├── mcp/             # Model-Context-Protocol
-│   ├── ml/              # Machine learning
-│   ├── rag/             # RAG pipeline
-│   ├── tests/           # Test suites
-│   └── main.py          # FastAPI app
-├── public/              # Frontend
-│   ├── css/            # Styles
-│   ├── js/             # JavaScript
-│   └── index-new.html  # Main HTML
-├── docs/                # Documentation
-├── docker-compose.yml   # Docker services
-├── Dockerfile          # Docker image
-├── deploy.sh           # Deployment script
-└── README.md           # This file
+Γö£ΓöÇΓöÇ backend/              # Backend application
+Γöé   Γö£ΓöÇΓöÇ agents/          # AI agents
+Γöé   Γö£ΓöÇΓöÇ api/             # API endpoints
+Γöé   Γö£ΓöÇΓöÇ database/        # Database models
+Γöé   Γö£ΓöÇΓöÇ mcp/             # Model-Context-Protocol
+Γöé   Γö£ΓöÇΓöÇ ml/              # Machine learning
+Γöé   Γö£ΓöÇΓöÇ rag/             # RAG pipeline
+Γöé   Γö£ΓöÇΓöÇ tests/           # Test suites
+Γöé   ΓööΓöÇΓöÇ main.py          # FastAPI app
+Γö£ΓöÇΓöÇ public/              # Frontend
+Γöé   Γö£ΓöÇΓöÇ css/            # Styles
+Γöé   Γö£ΓöÇΓöÇ js/             # JavaScript
+Γöé   ΓööΓöÇΓöÇ index-new.html  # Main HTML
+Γö£ΓöÇΓöÇ docs/                # Documentation
+Γö£ΓöÇΓöÇ docker-compose.yml   # Docker services
+Γö£ΓöÇΓöÇ Dockerfile          # Docker image
+Γö£ΓöÇΓöÇ deploy.sh           # Deployment script
+ΓööΓöÇΓöÇ README.md           # This file
 ```
 
-## 🤝 Contributing
+## ≡ƒñ¥ Contributing
 
 Contributions are welcome! Please:
 
@@ -885,11 +931,11 @@ Contributions are welcome! Please:
 4. Run tests
 5. Submit a pull request
 
-## 📄 License
+## ≡ƒôä License
 
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
+## ≡ƒÖÅ Acknowledgments
 
 - **FastAPI** - Modern web framework
 - **Supabase** - Backend-as-a-Service
@@ -897,14 +943,14 @@ This project is licensed under the MIT License.
 - **Docker** - Containerization
 - **Prometheus & Grafana** - Monitoring
 
-## 📞 Support
+## ≡ƒô₧ Support
 
 - **Documentation**: See `docs/` folder
 - **API Docs**: http://localhost:8000/docs
 - **Health Check**: http://localhost:8000/health
 - **Issues**: GitHub Issues
 
-## 🗺️ Roadmap
+## ≡ƒù║∩╕Å Roadmap
 
 - [ ] Mobile app (React Native)
 - [ ] Voice interface
@@ -921,5 +967,5 @@ This project is licensed under the MIT License.
 
 **Version**: 1.0.0  
 **Last Updated**: April 28, 2026  
-**Status**: Production Ready ✅
+**Status**: Production Ready Γ£à
 
