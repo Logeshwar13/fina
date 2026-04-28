@@ -156,34 +156,50 @@ class BaseAgent:
             print(f"[{self.name}] Observing...")
             observations = await self.observe(actions)
             
-            # Step 4: Reflect (analyze and learn)
-            print(f"[{self.name}] Reflecting...")
-            reflection = await self.reflect(query, observations, context)
+            # OPTIMIZATION: Skip reflection for simple data queries
+            query_lower = query.lower()
+            is_simple_query = any(phrase in query_lower for phrase in [
+                'how much', 'what is', 'show me', 'give me', 'tell me'
+            ]) and not any(phrase in query_lower for phrase in [
+                'analyze', 'recommend', 'suggest', 'advice', 'should i'
+            ])
+            
+            if is_simple_query:
+                print(f"[{self.name}] ⚡ Simple query detected - skipping reflection for speed")
+                reflection = "Simple data retrieval query - no analysis needed."
+            else:
+                # Step 4: Reflect (analyze and learn)
+                print(f"[{self.name}] Reflecting...")
+                reflection = await self.reflect(query, observations, context)
             
             # Step 5: Respond (generate final answer)
             print(f"[{self.name}] Responding...")
             response = await self.respond(query, reflection, observations, context)
             
-            # GUARDRAIL: Validate and enhance output
-            response_type_map = {
-                AgentRole.BUDGET_ADVISOR: "budget",
-                AgentRole.FRAUD_DETECTOR: "fraud",
-                AgentRole.RISK_ANALYST: "risk",
-                AgentRole.INVESTMENT_ADVISOR: "financial",
-                AgentRole.INSURANCE_ADVISOR: "financial"
-            }
-            response_type = response_type_map.get(self.role, "general")
-            
-            is_valid, error, enhanced_response = self.output_validator.validate_and_enhance(
-                response,
-                response_type=response_type,
-                context={"has_data": len(observations) > 0}
-            )
-            
-            if not is_valid:
-                print(f"[{self.name}] Output validation failed: {error}")
-                # Fallback to safe response
-                enhanced_response = "I apologize, but I encountered an issue generating a safe response. Please try rephrasing your question."
+            # GUARDRAIL: Validate and enhance output (SKIP for simple queries to save time)
+            if is_simple_query:
+                print(f"[{self.name}] ⚡ Skipping output validation for speed")
+                enhanced_response = response
+            else:
+                response_type_map = {
+                    AgentRole.BUDGET_ADVISOR: "budget",
+                    AgentRole.FRAUD_DETECTOR: "fraud",
+                    AgentRole.RISK_ANALYST: "risk",
+                    AgentRole.INVESTMENT_ADVISOR: "financial",
+                    AgentRole.INSURANCE_ADVISOR: "financial"
+                }
+                response_type = response_type_map.get(self.role, "general")
+                
+                is_valid, error, enhanced_response = self.output_validator.validate_and_enhance(
+                    response,
+                    response_type=response_type,
+                    context={"has_data": len(observations) > 0}
+                )
+                
+                if not is_valid:
+                    print(f"[{self.name}] Output validation failed: {error}")
+                    # Fallback to safe response
+                    enhanced_response = "I apologize, but I encountered an issue generating a safe response. Please try rephrasing your question."
             
             # Store in memory
             memory_entry = AgentMemory(
@@ -279,18 +295,23 @@ class BaseAgent:
                 print(f"[{self.name}] 🎯 Detected CREATE BUDGET request!")
         
         # CREATE TRANSACTION if asking to invest/add transaction/spent
-        # Check for explicit transaction keywords OR "add" with amount/food/merchant
-        transaction_keywords = ['invest', 'add transaction', 'create transaction', 'i spent', 'i bought', 'purchase', 'paid']
-        has_transaction_keyword = any(phrase in query_lower for phrase in transaction_keywords)
+        # STRICT DETECTION: Only create if explicitly asking to add/create
+        transaction_create_phrases = [
+            'add transaction', 'create transaction', 'add a transaction',
+            'create a transaction', 'new transaction', 'i spent', 'i bought',
+            'i purchased', 'i paid', 'invest', 'buy', 'purchase'
+        ]
         
-        # Also detect "add" with context (amount, food, merchant name)
-        has_add_with_context = ('add' in query_lower and 
-                               ('transaction' in query_lower or 
-                                'rs' in query_lower or 
-                                '₹' in query_lower or
-                                any(word in query_lower for word in ['food', 'shopping', 'movie', 'at'])))
+        has_explicit_create = any(phrase in query_lower for phrase in transaction_create_phrases)
         
-        if (has_transaction_keyword or has_add_with_context) and 'delete_transaction' not in tools_to_call and 'budget' not in query_lower:
+        # Also detect "add" with amount AND category (very specific)
+        has_add_with_amount_and_category = (
+            'add' in query_lower and 
+            ('rs' in query_lower or '₹' in query_lower) and
+            any(word in query_lower for word in ['food', 'shopping', 'movie', 'entertainment', 'transport'])
+        )
+        
+        if (has_explicit_create or has_add_with_amount_and_category) and 'delete_transaction' not in tools_to_call and 'budget' not in query_lower:
             if 'create_transaction' in self.tools:
                 tools_to_call.append('create_transaction')
                 print(f"[{self.name}] 🎯 Detected CREATE TRANSACTION request!")
@@ -589,10 +610,20 @@ Respond in JSON format:
                 args["amount"] = 1000  # Default
             
             # Determine type (expense or income)
-            if any(word in query for word in ['invest', 'investment', 'buy', 'purchase', 'spent', 'paid', 'add']):
+            # PRIORITY 1: Check for explicit "as income" or "income" keywords
+            if 'as income' in query or 'type income' in query or 'income for' in query:
+                args["type"] = "income"
+                print(f"[{self.name}] 💰 Detected INCOME transaction")
+            # PRIORITY 2: Check for explicit "as expense" or "expense" keywords
+            elif 'as expense' in query or 'type expense' in query or 'expense for' in query:
                 args["type"] = "expense"
+                print(f"[{self.name}] 💸 Detected EXPENSE transaction")
+            # PRIORITY 3: Check for action words that imply expense
+            elif any(word in query for word in ['buy', 'purchase', 'spent', 'paid']):
+                args["type"] = "expense"
+            # DEFAULT: expense
             else:
-                args["type"] = "expense"  # Default to expense
+                args["type"] = "expense"
             
             # Extract merchant/description - look for "at [merchant]" or "food at [merchant]"
             merchant_match = re.search(r'(?:food|shopping|movie|dinner|lunch)\s+at\s+(\w+)', query, re.IGNORECASE)
@@ -655,13 +686,13 @@ Respond in JSON format:
                     print(f"[{self.name}] 🔍 Will find transaction by description: {args['find_by_description']}")
             
             # Extract what to update
-            if "type" in query or "to income" in query or "to expense" in query:
-                if "income" in query:
-                    args["type"] = "income"
-                    print(f"[{self.name}] 🔄 Updating type to: income")
-                elif "expense" in query:
-                    args["type"] = "expense"
-                    print(f"[{self.name}] 🔄 Updating type to: expense")
+            # Check for type change (expense <-> income)
+            if any(phrase in query for phrase in ['to income', 'as income', 'change to income', 'type income', 'make it income']):
+                args["type"] = "income"
+                print(f"[{self.name}] 🔄 Updating type to: income")
+            elif any(phrase in query for phrase in ['to expense', 'as expense', 'change to expense', 'type expense', 'make it expense']):
+                args["type"] = "expense"
+                print(f"[{self.name}] 🔄 Updating type to: expense")
             
             # Extract category if present
             if "category" in query or "to food" in query or "to shopping" in query:
@@ -737,36 +768,41 @@ Respond in JSON format:
         context: Dict[str, Any]
     ) -> str:
         """
-        Analyze observations and generate insights.
-        
-        Args:
-            query: Original query
-            observations: Structured observations
-            context: Context dictionary
-            
-        Returns:
-            Reflection text
+        Analyze observations - uses rule-based analysis to save LLM tokens.
+        Only calls LLM for complex analysis queries.
         """
-        # Format observations for LLM
-        obs_text = "\n".join([
-            f"- {obs['action']}: {obs['summary']}"
-            for obs in observations
+        query_lower = query.lower()
+        
+        # For ALL data retrieval queries - skip LLM, use rule-based reflection
+        is_data_query = any(phrase in query_lower for phrase in [
+            'how much', 'what is', 'show me', 'give me', 'tell me',
+            'list', 'display', 'total', 'spent', 'spending', 'transactions',
+            'budget', 'last', 'recent', 'add', 'create', 'update', 'edit',
+            'delete', 'remove', 'food', 'movie', 'shopping', 'income', 'expense'
         ])
         
-        reflection_prompt = f"""Analyze the following observations and generate insights.
+        # Only use LLM for complex analysis
+        is_analysis_query = any(phrase in query_lower for phrase in [
+            'analyze', 'should i', 'recommend', 'advice', 'suggest',
+            'why', 'how can i improve', 'what should'
+        ])
+        
+        if is_data_query and not is_analysis_query:
+            # Build reflection from data without LLM call
+            summary_parts = []
+            for obs in observations:
+                summary_parts.append(obs.get('summary', ''))
+            return "Data retrieved: " + "; ".join(summary_parts)
+        
+        # Only call LLM for genuine analysis queries
+        obs_text = "\n".join([f"- {obs['action']}: {obs['summary']}" for obs in observations])
+        
+        reflection_prompt = f"""Briefly analyze (2-3 sentences max):
 
-Original Query: {query}
+Query: {query}
+Data: {obs_text}
 
-Observations:
-{obs_text}
-
-Provide:
-1. Key findings from the data
-2. Patterns or trends identified
-3. Potential concerns or opportunities
-4. Recommendations
-
-Be specific and reference actual data points."""
+Key insight only."""
         
         messages = [
             {"role": "system", "content": self.system_prompt},
@@ -776,7 +812,7 @@ Be specific and reference actual data points."""
         response = await self.model.generate(
             messages=messages,
             temperature=0.5,
-            max_tokens=400
+            max_tokens=150  # Very short for reflection
         )
         
         return response["content"]
@@ -809,73 +845,232 @@ Be specific and reference actual data points."""
             for obs in observations
         ])
         
-        response_prompt = f"""Generate a helpful response to the user's query using the ACTUAL DATA provided.
+        # DETECT QUERY TYPE to determine response length
+        query_lower = query.lower()
+        
+        # Check if user wants ONLY specific data (concise response)
+        wants_concise = any(phrase in query_lower for phrase in [
+            'only', 'just', 'give me', 'show me', 'what is', 'how much',
+            'tell me', 'list', 'display', 'quick', 'brief'
+        ])
+        
+        # Check if user wants FULL/DETAILED data
+        wants_detailed = any(phrase in query_lower for phrase in [
+            'all', 'everything', 'complete', 'full', 'detailed', 'entire',
+            'whole', 'every', 'total', 'summary', 'breakdown', 'analysis'
+        ])
+        
+        # Check if asking about specific time period (month, week, etc.)
+        has_time_period = any(phrase in query_lower for phrase in [
+            'month', 'week', 'year', 'today', 'yesterday', 'last', 'this'
+        ])
+        
+        # Determine response style
+        if wants_concise and not wants_detailed:
+            response_style = "CONCISE"
+            max_tokens = 200  # Reduced from 300
+            style_instruction = """
+RESPONSE STYLE: ULTRA CONCISE (Maximum 3-4 lines ONLY)
+
+CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
+1. Maximum 3-4 lines total (NOT 3-4 lines per section!)
+2. NO introductions ("Here are...", "Let me show you...")
+3. NO recommendations or advice
+4. NO explanations or analysis
+5. NO "Let me know if you need anything else"
+6. NO disclaimers
+7. NO totals unless specifically asked
+8. Show ONLY what was asked - nothing more
+
+If showing transactions:
+- Show ONLY 1-3 transactions maximum
+- Format: "₹amount - merchant - date"
+- One line per transaction
+- NO category, location, or description unless asked
+
+If showing amounts:
+- Format: "Category: ₹amount"
+- One line only
+
+Examples:
+
+Query: "Show me my last transaction"
+Response: "₹450 - Shopping - April 27, 2026"
+
+Query: "How much did I spend on food?"
+Response: "Food & Dining: ₹3,588"
+
+Query: "What is my food budget?"
+Response: "Food budget: ₹15,000
+Spent: ₹3,588
+Remaining: ₹11,412"
+
+REMEMBER: Maximum 3-4 lines total. Be extremely brief.
+"""
+        elif wants_detailed or has_time_period:
+            response_style = "DETAILED"
+            max_tokens = 1000  # Reduced from 1200
+            style_instruction = """
+RESPONSE STYLE: DETAILED
+
+The user wants comprehensive information with full details.
+
+RULES:
+1. Show ALL relevant transactions (up to 10-12)
+2. Include full details: amount, merchant, date, category
+3. Add totals and summaries
+4. Provide brief insights (2-3 lines max)
+5. Use proper formatting with sections
+6. Add blank lines between sections
+7. Keep recommendations to 2-3 bullet points maximum
+"""
+        else:
+            response_style = "BALANCED"
+            max_tokens = 500  # Reduced from 800
+            style_instruction = """
+RESPONSE STYLE: BALANCED
+
+Provide a helpful response with key data and brief insights.
+
+RULES:
+1. Show 3-5 most relevant items only
+2. Include key details (amount, merchant, date)
+3. Add a brief total if relevant
+4. Maximum 1-2 recommendations
+5. Keep it readable and well-formatted
+6. Total response should be 6-8 lines maximum
+"""
+        
+        response_prompt = f"""Generate a response to the user's query using the ACTUAL DATA provided.
 
 User Query: {query}
 
 ACTUAL DATA FROM DATABASE:
 {actual_data}
 
-Data Summary:
-{data_summary}
+{style_instruction}
 
-Analysis:
-{reflection}
+CRITICAL: Follow the response style rules EXACTLY. Do not add extra content.
 
-CRITICAL INSTRUCTIONS:
-1. Use the ACTUAL DATA above - show specific amounts, dates, merchants, descriptions
-2. DO NOT say "I don't have access" or "I found X transactions" without showing them
-3. Format data clearly with bullet points or numbered lists
-4. Include ALL relevant details (amounts in ₹, dates, categories, merchants, locations)
-5. Provide actionable recommendations based on the real data
-6. Be conversational and helpful
-7. If showing transactions, show at least 5-10 with full details
-8. Always include totals and summaries
-9. **IMPORTANT**: Add blank lines between sections for readability
-10. **IMPORTANT**: Use proper paragraph breaks - add TWO newlines between major sections
+If CONCISE mode:
+- Maximum 3-4 lines total
+- NO introductions, NO recommendations, NO disclaimers
+- Show ONLY the requested data
 
-FORMATTING RULES:
-- Add a blank line after each transaction
-- Add TWO blank lines between different sections (e.g., between transaction list and recommendations)
-- Use bullet points (•) or numbers for lists
-- Keep paragraphs short (2-3 sentences max)
-- Add line breaks after every 2-3 sentences
+If DETAILED mode:
+- Show full transaction list with details
+- Add totals and brief insights
 
-Example format:
-"Here are your recent Food & Dining transactions:
+If BALANCED mode:
+- Show 3-5 items with key details
+- Keep total response under 8 lines
 
-1. ₹450 - Pizza Hut - April 25, 2024
-   Category: Food & Dining, Location: Mumbai
-
-2. ₹320 - Starbucks - April 23, 2024
-   Category: Food & Dining, Location: Delhi
-
-Total: ₹770 spent on Food & Dining
-
-
-Recommendations:
-
-• Monitor your Food & Dining expenses to stay within budget
-• Consider meal planning to reduce restaurant visits
-• Track your spending weekly to identify patterns
-
-
-Let me know if you need any other information!"
-
-Keep the response clear, well-formatted, and show the actual data."""
+Format with proper line breaks between items."""
         
         messages = [
-            {"role": "system", "content": self.system_prompt + "\n\nIMPORTANT: Always show actual data with specific amounts, dates, and details. Never give generic responses."},
+            {"role": "system", "content": self.system_prompt + f"\n\nCRITICAL: Response style is {response_style}. Follow the length restrictions EXACTLY. Do not exceed the specified line count."},
             {"role": "user", "content": response_prompt}
         ]
         
         response = await self.model.generate(
             messages=messages,
             temperature=0.7,
-            max_tokens=1200
+            max_tokens=max_tokens
         )
         
-        return response["content"]
+        generated_response = response["content"]
+        
+        # POST-PROCESSING: Forcefully truncate if response is too long
+        if response_style == "CONCISE":
+            generated_response = self._force_concise_response(generated_response, query)
+        elif response_style == "BALANCED":
+            generated_response = self._force_balanced_response(generated_response)
+        
+        return generated_response
+    
+    def _force_concise_response(self, response: str, query: str) -> str:
+        """
+        Forcefully make response concise by removing extra content.
+        This is a safety net when LLM doesn't follow instructions.
+        """
+        lines = response.strip().split('\n')
+        
+        # Remove empty lines
+        lines = [line for line in lines if line.strip()]
+        
+        # Remove common fluff phrases (case insensitive)
+        fluff_phrases = [
+            "here are", "let me", "i found", "based on", "please note",
+            "recommendations:", "actionable steps:", "financial summary:",
+            "note that", "it is essential", "please let me know",
+            "disclaimer:", "⚠️", "let me know if", "feel free",
+            "your recent", "transactions:", "category:", "type:", "location:",
+            "description:", "total:", "however", "considering", "although"
+        ]
+        
+        filtered_lines = []
+        for line in lines:
+            line_lower = line.lower().strip()
+            
+            # Skip lines that start with fluff phrases
+            if any(line_lower.startswith(phrase) for phrase in fluff_phrases):
+                continue
+            
+            # Skip lines with fluff phrases anywhere
+            if any(phrase in line_lower for phrase in [
+                "recommendations:", "actionable steps:", "financial summary:",
+                "please let me know", "feel free", "disclaimer:", "⚠️",
+                "note that", "it is essential", "however", "considering"
+            ]):
+                continue
+            
+            # Skip recommendation bullets
+            if line.strip().startswith('•') or line.strip().startswith('-'):
+                if any(word in line_lower for word in ['consider', 'monitor', 'track', 'review', 'recommend']):
+                    continue
+            
+            # Skip numbered recommendation lists
+            if re.match(r'^\d+\.', line.strip()):
+                if any(word in line_lower for word in ['review', 'prioritize', 'consider', 'reduce']):
+                    continue
+            
+            # Skip lines with "Category:", "Type:", "Location:", "Description:" (detail lines)
+            if any(detail in line for detail in ['Category:', 'Type:', 'Location:', 'Description:']):
+                continue
+            
+            filtered_lines.append(line)
+        
+        # For "how much" or "what is" queries, return ONLY the amount/total
+        query_lower = query.lower()
+        if any(phrase in query_lower for phrase in ['how much', 'what is', 'tell me the', 'total']):
+            # Find lines with amounts (₹)
+            amount_lines = [line for line in filtered_lines if '₹' in line]
+            if amount_lines:
+                # Return ONLY first 1-2 lines with amounts
+                return '\n'.join(amount_lines[:2])
+        
+        # For "show me" queries, return max 3 lines
+        if 'show me' in query_lower or 'give me' in query_lower:
+            return '\n'.join(filtered_lines[:3])
+        
+        # Default: return max 3 lines
+        return '\n'.join(filtered_lines[:3])
+    
+    def _force_balanced_response(self, response: str) -> str:
+        """
+        Forcefully limit balanced responses to 8 lines.
+        """
+        lines = response.strip().split('\n')
+        lines = [line for line in lines if line.strip()]
+        
+        # Remove disclaimer lines
+        lines = [line for line in lines if '⚠️' not in line and 'disclaimer' not in line.lower()]
+        
+        # Limit to 8 lines
+        if len(lines) > 8:
+            return '\n'.join(lines[:8])
+        
+        return '\n'.join(lines)
     
     def _extract_actual_data_from_observations(self, observations: List[Dict[str, Any]]) -> str:
         """

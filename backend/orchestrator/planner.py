@@ -59,10 +59,10 @@ class QueryPlanner:
             ]
         }
         
-        # Multi-domain keywords
+        # Multi-domain keywords (only for truly comprehensive queries)
         self.multi_domain_keywords = [
-            "complete", "full", "comprehensive", "overall", "everything",
-            "all", "entire", "total", "review", "analysis"
+            "complete analysis", "full review", "comprehensive review",
+            "overall financial", "everything about", "entire financial"
         ]
     
     async def plan(self, query: str, context: Dict[str, Any] = None) -> Dict[str, Any]:

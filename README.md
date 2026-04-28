@@ -2,7 +2,7 @@
 
 A comprehensive personal finance management platform powered by multi-agent AI system with RAG (Retrieval-Augmented Generation) capabilities.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
@@ -260,6 +260,40 @@ docker-compose restart
 # Restart specific service
 docker-compose restart backend
 ```
+
+### ⚠️ Updating API Keys or Environment Variables
+
+> **IMPORTANT**: A simple `docker-compose restart` does NOT reload `.env` file changes.
+> You must do a full stop + start to force Docker to pick up new environment variables.
+
+**When to use this:**
+- Changed `GROQ_API_KEY` (e.g. hit rate limit, switched to new key)
+- Changed `SUPABASE_URL` or `SUPABASE_KEY`
+- Changed any value in `backend/.env` or `.env`
+
+**Force reload command:**
+```bash
+docker-compose stop backend
+docker-compose up -d backend
+```
+
+**Verify the new key is loaded:**
+```bash
+# Check GROQ key is updated
+docker exec fina-backend env | grep GROQ_API_KEY
+
+# Check Supabase URL is updated
+docker exec fina-backend env | grep SUPABASE_URL
+```
+
+**Full rebuild (if still not working):**
+```bash
+docker-compose down
+docker-compose up -d --build
+```
+
+> **Groq Free Tier Limit**: 100,000 tokens/day per organization.
+> If you hit the limit, either wait for daily reset (midnight UTC) or create a new Groq account at https://console.groq.com for a fresh key.
 
 ### Check Status
 
