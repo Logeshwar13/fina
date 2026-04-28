@@ -1,11 +1,31 @@
-# FinA - AI-Powered Personal Finance Management System
+# FinA - Personal Finance Management System
 
-A comprehensive personal finance management platform powered by multi-agent AI system with RAG (Retrieval-Augmented Generation) capabilities.
+FinA is a production-grade AI-powered personal finance advisor built on a true MCP (Model-Context-Protocol) architecture with a full RAG pipeline, 5 specialized AI agents, and an agentic reasoning loop. It helps users manage transactions, budgets, fraud detection, risk assessment, investments, and insurance — all through natural language.
 
 ![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
+
+---
+
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Pipeline Stages](#pipeline-stages)
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [User Guide](#user-guide)
+- [Docker Commands](#docker-commands)
+- [Development Setup](#development-setup)
+- [Environment Variables](#environment-variables)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
+- [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
 
 ---
 
@@ -21,10 +41,10 @@ A comprehensive personal finance management platform powered by multi-agent AI s
 |------|-------|-------------|
 | 1 | **QueryPlanner** | Receives user natural language query. Detects intent (BUDGET / FRAUD / RISK / INVESTMENT / INSURANCE). Routes to one or multiple agents. No LLM call — pure keyword routing. |
 | 2 | **Guardrails (Input)** | Pre-LLM validation. Detects XSS, SQL injection, excessive amounts, invalid queries. Sanitizes input before any agent sees it. Zero LLM cost. |
-| 3 | **RAG Retrieval** | Embeds query → searches FAISS vector DB → retrieves top-5 relevant transactions/budgets/policies. Injects context into agent prompt. |
+| 3 | **RAG Retrieval** | Embeds query, searches FAISS vector DB, retrieves top-5 relevant transactions/budgets/policies. Injects context into agent prompt. |
 | 4 | **BudgetAgent** | `[Direct LLM + Tools]` Handles spending queries, budget creation/update/delete, transaction management. Tools: `get_transactions`, `create_budget`, `update_transaction`, `analyze_budget_trends`. |
 | 5 | **FraudAgent** | `[ML + LLM]` Isolation Forest ML model scores each transaction. LLM interprets patterns. Tools: `get_fraud_alerts`, `flag_transaction_fraud`, `detect_patterns`. |
-| 6 | **RiskAgent** | `[Direct LLM]` Calculates financial health score (0–100, grade A–F). Analyzes debt-to-income ratio, emergency fund, spending stability. Tools: `get_risk_score`, `calculate_health_metrics`. |
+| 6 | **RiskAgent** | `[Direct LLM]` Calculates financial health score (0-100, grade A-F). Analyzes debt-to-income ratio, emergency fund, spending stability. Tools: `get_risk_score`, `calculate_health_metrics`. |
 | 7 | **InvestmentAgent** | `[Direct LLM]` Analyzes investment capacity, recommends portfolio allocation. Tools: `get_transactions`, `get_risk_score`, `analyze_investments`. |
 | 8 | **InsuranceAgent** | `[Direct LLM]` Assesses coverage needs, recommends policies, calculates premiums. Tools: `get_insurance_policies`, `assess_coverage`, `save_assessment`. |
 | 9 | **ResponseSynthesizer** | Combines outputs from multiple agents into one coherent response using LLM. Applies post-processing for concise/detailed/balanced formatting. |
@@ -37,699 +57,254 @@ A comprehensive personal finance management platform powered by multi-agent AI s
 | Layer | Technology |
 |-------|------------|
 | **LLM** | Groq — `llama-3.3-70b-versatile` (free tier, 100K tokens/day) |
-| **Agent Framework** | Custom multi-agent system with Agentic Loop (Plan → Act → Observe → Reflect → Respond) |
-| **MCP Architecture** | Custom Model-Context-Protocol (Model Layer · Context Layer · Protocol Layer) |
-| **RAG Pipeline** | FAISS vector DB · sentence-transformers · custom chunker/embedder/retriever |
-| **Backend API** | FastAPI + Uvicorn (port 8000) · 30+ REST endpoints · WebSocket |
-| **Frontend** | Vanilla JS (ES6+) · Custom CSS · Nginx (reverse proxy) |
-| **Database** | Supabase (PostgreSQL) · 6 tables · Row-Level Security (RLS) |
-| **Vector Store** | FAISS · 1536 dimensions · persistent index |
+| **Agent Framework** | Custom multi-agent system with Agentic Loop (Plan, Act, Observe, Reflect, Respond) |
+| **MCP Architecture** | Custom Model-Context-Protocol (Model Layer, Context Layer, Protocol Layer) |
+| **RAG Pipeline** | FAISS vector DB, sentence-transformers, custom chunker/embedder/retriever |
+| **Backend API** | FastAPI + Uvicorn (port 8000), 30+ REST endpoints, WebSocket |
+| **Frontend** | Vanilla JS (ES6+), Custom CSS, Nginx (reverse proxy) |
+| **Database** | Supabase (PostgreSQL), 6 tables, Row-Level Security (RLS) |
+| **Vector Store** | FAISS, 1536 dimensions, persistent index |
 | **Cache** | Redis |
-| **ML Models** | Isolation Forest (fraud) · Logistic Regression (categorization) · Custom risk scorer |
-| **Guardrails** | Input Validator · Prompt Constraints · Output Validator · XSS/SQL injection prevention |
-| **Observability** | Prometheus metrics · Grafana dashboards · Structured JSON logging · Distributed tracing |
-| **Containerization** | Docker · Docker Compose (5 services) |
-| **Testing** | pytest · 181+ tests · 70%+ coverage |
+| **ML Models** | Isolation Forest (fraud), Logistic Regression (categorization), Custom risk scorer |
+| **Guardrails** | Input Validator, Prompt Constraints, Output Validator, XSS/SQL injection prevention |
+| **Observability** | Prometheus metrics, Grafana dashboards, Structured JSON logging, Distributed tracing |
+| **Containerization** | Docker, Docker Compose (5 services) |
+| **Testing** | pytest, 181+ tests, 70%+ coverage |
 
 ---
 
-## ≡ƒîƒ Features
+## Features
 
-- **Multi-Agent AI System**: 5 specialized AI agents (Budget, Fraud, Risk, Investment, Insurance)
-- **Natural Language Interface**: Chat with AI to manage your finances
-- **Real-time Transaction Management**: Create, update, and delete transactions
-- **Smart Budget Planning**: AI-powered budget recommendations and tracking
-- **Fraud Detection**: ML-based fraud detection with real-time alerts
-- **Risk Assessment**: Comprehensive financial health scoring
-- **Investment Advisory**: Personalized investment recommendations
-- **Insurance Planning**: Coverage analysis and recommendations
-- **RAG Pipeline**: Context-aware responses using vector embeddings
-- **Observability**: Metrics, logging, and distributed tracing
+- **Multi-Agent AI System** — 5 specialized agents: Budget, Fraud, Risk, Investment, Insurance
+- **Natural Language Interface** — Chat with AI to manage your finances
+- **Real-time Transaction Management** — Create, update, and delete transactions via chat or UI
+- **Smart Budget Planning** — AI-powered budget recommendations and tracking
+- **Fraud Detection** — ML-based fraud detection with real-time alerts
+- **Risk Assessment** — Comprehensive financial health scoring (0-100, grade A-F)
+- **Investment Advisory** — Personalized investment recommendations based on your data
+- **Insurance Planning** — Coverage analysis, needs assessment, and policy recommendations
+- **RAG Pipeline** — Context-aware responses grounded in your actual financial data
+- **Agentic Loop** — Plan, Act, Observe, Reflect, Respond reasoning cycle per agent
+- **Guardrails** — Input/output validation, hallucination prevention, safe financial advice
+- **Observability** — Metrics, logging, and distributed tracing with Prometheus and Grafana
 
-## ≡ƒÅù∩╕Å Architecture Deep Dive
+---
 
-### MCP (Model-Context-Protocol) Architecture
+## Prerequisites
 
-FinA implements a true MCP architecture with three distinct layers:
+- **Docker Desktop** (Windows/Mac) or **Docker Engine** (Linux) — https://www.docker.com/products/docker-desktop
+- **Supabase Account** (Free) — https://supabase.com
+- **Groq API Key** (Free) — https://console.groq.com
 
-**1. Model Layer** (`backend/mcp/model.py`)
-- LLM integration supporting Groq (free!), OpenAI, and Anthropic
-- Response generation with temperature control
-- Embeddings generation for semantic search
-- Automatic fallbacks and token tracking
+---
 
-**2. Context Layer** (`backend/mcp/context.py`)
-- FAISS vector database (1536 dimensions)
-- Semantic search with metadata filtering
-- Persistent storage for user data
-- Real-time context updates
-
-**3. Protocol Layer** (`backend/mcp/protocol.py` + `tools.py`)
-- 30+ registered tools for financial operations
-- Tool execution engine with error handling
-- Type-safe parameter validation
-- Automatic tool discovery
-
-### RAG (Retrieval-Augmented Generation) Pipeline
-
-FinA uses RAG to provide accurate, data-grounded responses:
-
-```
-User Query ΓåÆ Embed Query ΓåÆ Search Vectors ΓåÆ Retrieve Context ΓåÆ LLM + Context ΓåÆ Response
-```
-
-**How it works:**
-1. **Chunking**: Break transactions/budgets into searchable chunks
-2. **Embedding**: Convert text to 1536-dimensional vectors
-3. **Indexing**: Store in FAISS with metadata (user_id, category)
-4. **Retrieval**: Find top-5 most relevant items using semantic search
-5. **Generation**: LLM generates response using retrieved context
-
-**Data Sources Indexed:**
-- All user transactions
-- Budget limits and spending patterns
-- Insurance policies and coverage
-- Risk assessments and financial health data
-
-### Multi-Agent Orchestration
-
-Queries are intelligently routed to specialized agents:
-
-```
-User Query ΓåÆ Query Planner ΓåÆ Agent Selection ΓåÆ Parallel Execution ΓåÆ Response Synthesis
-```
-
-**Agent Capabilities:**
-- **Budget Agent**: Spending analysis, budget recommendations, overspending alerts
-- **Fraud Agent**: ML-based fraud detection, pattern analysis, security alerts
-- **Risk Agent**: Financial health scoring (0-100), risk factor analysis, recommendations
-- **Investment Agent**: Portfolio analysis, investment advice, risk-adjusted returns
-- **Insurance Agent**: Coverage gap analysis, policy recommendations, premium optimization
-
-**Orchestration Features:**
-- Intelligent query routing based on intent keywords
-- Parallel agent execution for complex queries
-- LLM-based response synthesis combining multiple agent outputs
-- Context sharing between agents for collaborative reasoning
-
-### Agentic Loop
-
-Each agent follows a 5-step reasoning cycle:
-
-1. **PLAN**: Analyze query, select tools, create execution strategy
-2. **ACT**: Execute tools, call APIs, gather data from database
-3. **OBSERVE**: Process results, structure data, extract insights
-4. **REFLECT**: Analyze observations, generate insights, identify patterns
-5. **RESPOND**: Format answer, add recommendations, apply guardrails
-
-**Example**: "Create a budget for Food with Γé╣15,000"
-- PLAN: Detect "create budget" intent, select `create_budget` tool
-- ACT: Execute `create_budget(category="Food", limit=15000)`
-- OBSERVE: Tool returns success, budget ID created
-- REFLECT: Budget created successfully, user can now track spending
-- RESPOND: "Γ£à Budget created! Food: Γé╣15,000/month. I'll help you track your spending."
-
-## ≡ƒôï Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Docker Desktop** (Windows/Mac) or **Docker Engine** (Linux)
-  - Download: https://www.docker.com/products/docker-desktop
-  - Verify: `docker --version` and `docker-compose --version`
-
-- **Supabase Account** (Free)
-  - Sign up: https://supabase.com
-  - Create a new project
-
-- **Groq API Key** (Free)
-  - Sign up: https://console.groq.com
-  - Create an API key
-
-## ≡ƒÜÇ Quick Start (5 Minutes)
+## Quick Start
 
 ### Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd rag_p1
+git clone https://github.com/Logeshwar13/fina.git
+cd fina
 ```
 
 ### Step 2: Setup Environment Variables
 
-#### 2.1 Create Root .env File
-
-```bash
-# Copy the example file
-cp .env.example .env
-```
-
-Edit `.env` and add your Supabase credentials:
+Copy and fill in the root `.env`:
 
 ```env
-# Frontend Configuration
 VITE_API_URL=http://localhost:8000
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
 
-**Where to find these values:**
-1. Go to your Supabase project dashboard
-2. Click "Settings" ΓåÆ "API"
-3. Copy:
-   - **Project URL** ΓåÆ `SUPABASE_URL`
-   - **anon/public key** ΓåÆ `SUPABASE_ANON_KEY`
-
-#### 2.2 Create Backend .env File
-
-```bash
-# Copy the example file
-cp backend/.env.example backend/.env
-```
-
-Edit `backend/.env` and add your credentials:
+Copy and fill in `backend/.env`:
 
 ```env
-# Database Configuration
 DATABASE_URL=postgresql+psycopg2://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres?sslmode=require
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_KEY=your_supabase_anon_key_here
 SUPABASE_ANON_KEY=your_supabase_anon_key_here
 SUPABASE_SERVICE_KEY=your_supabase_service_role_key_here
-
-# LLM API Key
 GROQ_API_KEY=your_groq_api_key_here
-
-# Application Settings (keep defaults)
 ENVIRONMENT=development
 DEBUG=false
 LOG_LEVEL=INFO
 PORT=8000
 ```
 
-**Where to find these values:**
+**Where to find Supabase values:** Dashboard > Settings > API
+**Where to find Groq key:** https://console.groq.com > API Keys
 
-**Supabase:**
-1. Go to Supabase Dashboard ΓåÆ Settings ΓåÆ API
-2. Copy:
-   - **Project URL** ΓåÆ `SUPABASE_URL`
-   - **anon/public key** ΓåÆ `SUPABASE_KEY` and `SUPABASE_ANON_KEY`
-   - **service_role key** ΓåÆ `SUPABASE_SERVICE_KEY`
+### Step 3: Setup Database
 
-3. Go to Settings ΓåÆ Database ΓåÆ Connection String
-4. Select "Session pooler" and copy the connection string
-5. Replace `[YOUR-PASSWORD]` with your database password ΓåÆ `DATABASE_URL`
+1. Go to Supabase project > SQL Editor
+2. Open `backend/data/complete_database_schema.sql`
+3. Copy, paste, and run it
 
-**Groq:**
-1. Go to https://console.groq.com
-2. Sign up (free, no credit card required)
-3. Go to "API Keys" section
-4. Click "Create API Key"
-5. Copy the key (starts with `gsk_...`) ΓåÆ `GROQ_API_KEY`
-
-### Step 3: Setup Database Tables
-
-1. Go to your Supabase project
-2. Click "SQL Editor"
-3. Open `backend/data/complete_database_schema.sql` from this repository
-4. Copy the entire SQL content
-5. Paste into Supabase SQL Editor
-6. Click "Run"
-
-This creates all necessary tables:
-- `users` - User profiles and income
-- `transactions` - Financial transactions
-- `budgets` - Budget limits by category
-- `risk_scores` - Financial health assessments
-- `insurance_policies` - Insurance policies
-- `insurance_risk_assessments` - Insurance needs assessments
-
-**Alternative**: You can also use individual schema files:
-- `backend/data/create_tables_supabase.py` - Core tables
-- `backend/data/create_insurance_tables_supabase.sql` - Insurance tables
+This creates 6 tables: `users`, `transactions`, `budgets`, `risk_scores`, `insurance_policies`, `insurance_risk_assessments`
 
 ### Step 4: Run with Docker
 
-## ∩┐╜ Docker Commands
+```bash
+docker-compose up -d --build
+```
 
-### Start Services
+### Step 5: Access the Application
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost |
+| Backend API | http://localhost:8000 |
+| API Docs | http://localhost:8000/docs |
+| Grafana | http://localhost:3000 (admin/admin) |
+| Prometheus | http://localhost:9090 |
+
+---
+
+## User Guide
+
+### Sign Up and Login
+
+1. Open http://localhost
+2. Click "Sign Up" and fill in your details (email, password, name)
+3. Check your email for a verification link
+4. Login and you'll land on the Dashboard
+
+### Dashboard
+
+Shows your total balance, monthly income/expenses, spending by category (pie chart), monthly trends (line chart), and recent transactions.
+
+### Transactions
+
+Add, edit, or delete transactions manually via the UI, or use AI Chat:
+- "Add a transaction of Rs.500 for food at Starbucks"
+- "Edit the last transaction to income"
+- "Delete the movie transaction"
+
+### Budgets
+
+Set monthly limits per category. Track progress with color indicators:
+- Green: under 50% spent
+- Yellow: 50-80% spent
+- Red: over 80% spent
+
+Use AI Chat: "Create a budget for Food with Rs.15,000"
+
+### AI Chat
+
+Talk to your financial advisor in natural language. Examples:
+
+| Query | What it does |
+|-------|-------------|
+| "How much did I spend on food?" | Shows food spending total |
+| "Show my last 5 transactions" | Lists recent transactions |
+| "Create a budget for Shopping with Rs.10,000" | Creates budget |
+| "What is my financial health score?" | Shows risk score |
+| "Should I invest Rs.50,000?" | Investment advice |
+| "Do I need life insurance?" | Insurance recommendation |
+| "Are there any suspicious transactions?" | Fraud check |
+
+### Fraud Detection
+
+ML model scores every transaction. View flagged transactions, review patterns, and mark safe ones.
+
+### Risk Assessment
+
+Financial health score (0-100) with grade A-F. Analyzes debt-to-income ratio, emergency fund, income stability, and spending patterns.
+
+### Insurance
+
+Add policies (Health, Life, Property, Vehicle), track premiums and expiry dates, and run the coverage calculator for personalized recommendations.
+
+### Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Page not loading | Press `Ctrl + Shift + R` (hard refresh) |
+| AI Chat not responding | Check Groq API key in `backend/.env`, check token limit |
+| Transactions not saving | Verify Supabase credentials, check browser console (F12) |
+| Login issues | Confirm email in Supabase Auth dashboard |
+| Charts not showing | Ensure transactions exist, hard refresh |
+
+---
+
+## Docker Commands
 
 ```bash
 # Start all services
-docker-compose up -d
-
-# Start with rebuild
 docker-compose up -d --build
 
-# View logs
-docker-compose logs -f
-
-# View specific service logs
-docker logs fina-backend --follow
-```
-
-### Stop Services
-
-```bash
 # Stop all services
 docker-compose down
 
-# Stop and remove volumes
-docker-compose down -v
+# View logs
+docker logs fina-backend --follow
+
+# Check running containers
+docker-compose ps
 ```
 
-### Restart Services
+### Updating API Keys (Important)
 
-```bash
-# Restart all
-docker-compose restart
+`docker-compose restart` does NOT reload `.env` changes. Use this instead:
 
-# Restart specific service
-docker-compose restart backend
-```
-
-### ΓÜá∩╕Å Updating API Keys or Environment Variables
-
-> **IMPORTANT**: A simple `docker-compose restart` does NOT reload `.env` file changes.
-> You must do a full stop + start to force Docker to pick up new environment variables.
-
-**When to use this:**
-- Changed `GROQ_API_KEY` (e.g. hit rate limit, switched to new key)
-- Changed `SUPABASE_URL` or `SUPABASE_KEY`
-- Changed any value in `backend/.env` or `.env`
-
-**Force reload command:**
 ```bash
 docker-compose stop backend
 docker-compose up -d backend
 ```
 
-**Verify the new key is loaded:**
+Verify the new key loaded:
 ```bash
-# Check GROQ key is updated
 docker exec fina-backend env | grep GROQ_API_KEY
-
-# Check Supabase URL is updated
-docker exec fina-backend env | grep SUPABASE_URL
 ```
 
-**Full rebuild (if still not working):**
+Full rebuild if still not working:
 ```bash
 docker-compose down
 docker-compose up -d --build
 ```
 
-> **Groq Free Tier Limit**: 100,000 tokens/day per organization.
-> If you hit the limit, either wait for daily reset (midnight UTC) or create a new Groq account at https://console.groq.com for a fresh key.
+> **Groq Free Tier**: 100,000 tokens/day per organization. If you hit the limit, wait for daily reset (midnight UTC) or use a new Groq account.
 
-### Check Status
+---
 
-```bash
-# List running containers
-docker-compose ps
+## Development Setup
 
-```bash
-# Make deploy script executable (Linux/Mac)
-chmod +x deploy.sh
-
-# Start all services
-./deploy.sh up
-
-# Or use docker-compose directly
-docker-compose up -d --build
-```
-
-**What this does:**
-- Builds the backend Docker image
-- Starts 5 services:
-  - Backend API (FastAPI)
-  - Frontend (Nginx)
-  - Redis (caching)
-  - Prometheus (metrics)
-  - Grafana (dashboards)
-
-### Step 5: Access the Application
-
-Open your browser and navigate to:
-
-- **Frontend**: http://localhost
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Prometheus**: http://localhost:9090
-
-### Step 6: Create Your Account
-
-1. Go to http://localhost
-2. Click "Sign Up"
-3. Enter your details
-4. Verify email (check Supabase Auth)
-5. Login and start using FinA!
-
-## ≡ƒôû User Guide
-
-### Getting Started
-
-#### 1. Sign Up & Login
-
-**Sign Up:**
-1. Open http://localhost in your browser
-2. Click the "Sign Up" button
-3. Fill in your details:
-   - Email address
-   - Password (minimum 8 characters)
-   - Name
-   - Monthly income (optional)
-4. Click "Create Account"
-5. Check your email for verification link (check Supabase Auth dashboard if using test mode)
-
-**Login:**
-1. Go to http://localhost
-2. Enter your email and password
-3. Click "Login"
-4. You'll be redirected to the Dashboard
-
-**Forgot Password?**
-- Click "Forgot Password" on login page
-- Enter your email
-- Check email for reset link
-
-#### 2. Dashboard Overview
-
-After logging in, you'll see the Dashboard with:
-
-- **Total Balance**: Your current financial position (Income - Expenses)
-- **Monthly Income**: Your total income for the month
-- **Monthly Expenses**: Your total spending for the month
-- **Spending by Category**: Pie chart showing expense breakdown
-- **Monthly Trends**: Line chart showing income vs expenses over time
-- **Recent Transactions**: List of your latest transactions
-
-**Navigation Menu:**
-- ≡ƒÅá Dashboard - Overview of your finances
-- ≡ƒÆ░ Transactions - Manage all transactions
-- ≡ƒôè Budget - Set and track budgets
-- ≡ƒñû AI Chat - Talk to your AI financial advisor
-- ≡ƒ¢í∩╕Å Fraud Detection - Security alerts
-- ≡ƒôê Risk Assessment - Financial health score
-- ≡ƒÅÑ Insurance - Manage insurance policies
-
-#### 3. Managing Transactions
-
-**Add a Transaction:**
-1. Click "Transactions" in the menu
-2. Click "Add Transaction" button
-3. Fill in details:
-   - Amount (e.g., 500)
-   - Type: Income or Expense
-   - Category: Select from dropdown (Food, Transport, Shopping, etc.)
-   - Description: What was it for? (e.g., "Lunch at Starbucks")
-   - Date: When did it happen?
-4. Click "Save"
-
-**Edit a Transaction:**
-1. Find the transaction in the list
-2. Click the "Edit" button (pencil icon)
-3. Update the details
-4. Click "Save Changes"
-
-**Delete a Transaction:**
-1. Find the transaction in the list
-2. Click the "Delete" button (trash icon)
-3. Confirm deletion
-
-**Using AI to Add Transactions:**
-1. Go to "AI Chat"
-2. Type: "Add a transaction of Γé╣500 for food at Starbucks"
-3. AI will create the transaction for you!
-
-#### 4. Setting Up Budgets
-
-**Create a Budget:**
-1. Click "Budget" in the menu
-2. Click "Add Budget" button
-3. Select category (Food, Transport, Shopping, etc.)
-4. Enter monthly limit (e.g., Γé╣15,000)
-5. Click "Save"
-
-**Using AI to Create Budgets:**
-1. Go to "AI Chat"
-2. Type: "Create a budget for Food with Γé╣15,000"
-3. AI will set up the budget for you!
-
-**Track Budget Progress:**
-- Green: Under 50% spent Γ£à
-- Yellow: 50-80% spent ΓÜá∩╕Å
-- Red: Over 80% spent ≡ƒÜ¿
-
-**Edit/Delete Budgets:**
-- Click the edit icon to modify budget limits
-- Click delete icon to remove a budget
-
-#### 5. Using AI Chat
-
-The AI Chat is your personal financial advisor powered by 5 specialized agents.
-
-**How to Use:**
-1. Click "AI Chat" in the menu
-2. Type your question in the chat box
-3. Press Enter or click Send
-4. AI will analyze your data and respond
-
-**Example Queries:**
-
-**Budget Questions:**
-- "How much did I spend on food last month?"
-- "Create a budget for Entertainment with Γé╣10,000"
-- "Am I overspending on shopping?"
-- "Show my spending trends"
-
-**Transaction Questions:**
-- "Add a transaction of Γé╣650 for food at Alzyd"
-- "Edit the last transaction to income"
-- "Show my recent expenses"
-- "What did I spend on transport this week?"
-
-**Fraud Detection:**
-- "Check if my last transaction is suspicious"
-- "Are there any unusual transactions?"
-- "Flag transaction #123 as fraud"
-
-**Risk Assessment:**
-- "What's my financial health score?"
-- "Am I financially healthy?"
-- "What are my risk factors?"
-- "How can I improve my financial health?"
-
-**Investment Advice:**
-- "Should I invest Γé╣50,000?"
-- "What's my investment capacity?"
-- "Recommend an investment portfolio"
-
-**Insurance Planning:**
-- "Do I need life insurance?"
-- "Calculate my insurance needs"
-- "What insurance coverage do I need?"
-
-**Chat Features:**
-- ≡ƒÆ¼ Multi-turn conversations (AI remembers context)
-- ≡ƒôè Data-grounded responses (uses your actual data)
-- ≡ƒÄ» Actionable recommendations
-- ≡ƒô¥ Chat history saved automatically
-- ≡ƒùæ∩╕Å Clear history button to start fresh
-
-#### 6. Fraud Detection
-
-**View Fraud Alerts:**
-1. Click "Fraud Detection" in the menu
-2. See list of flagged transactions
-3. Review suspicious patterns
-
-**How Fraud Detection Works:**
-- ML model analyzes each transaction
-- Flags unusual amounts, locations, or patterns
-- Assigns fraud score (0-100%)
-- High scores trigger alerts
-
-**Mark Transaction as Safe:**
-1. Find the flagged transaction
-2. Click "Mark as Safe"
-3. Transaction will be unflagged
-
-#### 7. Risk Assessment
-
-**Check Your Financial Health:**
-1. Click "Risk Assessment" in the menu
-2. View your risk score (0-100)
-3. See your grade (A, B, C, D, F)
-4. Review risk factors
-
-**Risk Factors Analyzed:**
-- Debt-to-income ratio
-- Emergency fund adequacy
-- Income stability
-- Spending patterns
-- Budget adherence
-
-**Improve Your Score:**
-- Follow AI recommendations
-- Build emergency fund
-- Reduce debt
-- Stick to budgets
-- Increase income
-
-#### 8. Insurance Management
-
-**Add Insurance Policy:**
-1. Click "Insurance" in the menu
-2. Click "Add Policy"
-3. Fill in details:
-   - Policy type (Health, Life, Property, Vehicle)
-   - Provider name
-   - Premium amount
-   - Coverage amount
-   - Start and end dates
-4. Click "Save"
-
-**Calculate Insurance Needs:**
-1. Click "Calculate Coverage"
-2. Fill in the assessment form:
-   - Personal details (age, dependents)
-   - Financial info (income, debts)
-   - Lifestyle factors
-   - Health conditions
-3. Click "Calculate"
-4. View recommended coverage amounts
-
-**Track Policies:**
-- View all active policies
-- See premium reminders
-- Check expiry dates
-- Update policy details
-
-#### 9. Troubleshooting
-
-**Page Not Loading?**
-- Press `Ctrl + Shift + R` (hard refresh) to clear cache
-- Check if backend is running: http://localhost:8000/health
-- Restart Docker: `docker-compose restart`
-
-**AI Chat Not Responding?**
-- Check your internet connection
-- Verify Groq API key is set in `backend/.env`
-- Check backend logs: `docker logs fina-backend --follow`
-- Groq free tier has limits (100,000 tokens/day)
-
-**Transactions Not Saving?**
-- Check Supabase connection
-- Verify `DATABASE_URL` in `backend/.env`
-- Check browser console for errors (F12)
-- Try hard refresh: `Ctrl + Shift + R`
-
-**Login Issues?**
-- Verify email is confirmed in Supabase Auth dashboard
-- Check password is correct (minimum 8 characters)
-- Clear browser cookies and try again
-- Check backend logs for authentication errors
-
-**Budget Not Updating?**
-- Hard refresh the page: `Ctrl + Shift + R`
-- Check if transactions are in the correct category
-- Verify budget was created successfully
-- Check browser console for errors
-
-**Charts Not Showing?**
-- Ensure you have transactions in the database
-- Try different date ranges
-- Hard refresh: `Ctrl + Shift + R`
-- Check if data is loading in Network tab (F12)
-
-**General Tips:**
-- ≡ƒöä **Always try hard refresh first**: `Ctrl + Shift + R` (Windows) or `Cmd + Shift + R` (Mac)
-- ≡ƒöì **Check browser console**: Press F12 to see error messages
-- ≡ƒôï **Check backend logs**: `docker logs fina-backend --follow`
-- ≡ƒöî **Verify services are running**: `docker ps`
-- ≡ƒöü **Restart if needed**: `docker-compose restart`
-
-#### 10. Best Practices
-
-**For Accurate AI Responses:**
-- Add transactions regularly
-- Use consistent category names
-- Provide detailed descriptions
-- Keep budgets up to date
-
-**For Better Financial Health:**
-- Set realistic budgets
-- Track all expenses
-- Review spending weekly
-- Follow AI recommendations
-- Build emergency fund (3-6 months expenses)
-
-**For Security:**
-- Use strong passwords
-- Don't share your login credentials
-- Review fraud alerts regularly
-- Log out when done
-- Keep your email secure
-
-**For Performance:**
-- Clear chat history occasionally
-- Archive old transactions
-- Keep browser updated
-- Use hard refresh when needed
-
-## ≡ƒöº Development Setup
-
-### Running Locally (Without Docker)
-
-#### Backend
+### Backend (without Docker)
 
 ```bash
 cd backend
-
-# Create virtual environment
 python -m venv venv
-
-# Activate virtual environment
-# Windows PowerShell:
-.\venv\Scripts\Activate.ps1
-# Windows CMD:
-.\venv\Scripts\activate.bat
-# Linux/Mac:
-source venv/bin/activate
-
-# Install dependencies
+.\venv\Scripts\Activate.ps1   # Windows
+source venv/bin/activate       # Linux/Mac
 pip install -r requirements.txt
-
-# Run backend
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-#### Frontend
+### Frontend (without Docker)
 
 ```bash
 cd public
-
-# Simple HTTP server (Python)
 python -m http.server 8080
-
-# Or use Node.js
-npx http-server . -p 8080
 ```
 
-## ≡ƒô¥ Environment Variables Reference
+Then open http://localhost:8080
 
-### Required Variables
+---
+
+## Environment Variables
+
+### Required
 
 | Variable | Description | Where to Find |
 |----------|-------------|---------------|
-| `SUPABASE_URL` | Your Supabase project URL | Supabase Dashboard ΓåÆ Settings ΓåÆ API |
-| `SUPABASE_KEY` | Supabase anon/public key | Supabase Dashboard ΓåÆ Settings ΓåÆ API |
-| `SUPABASE_SERVICE_KEY` | Supabase service role key | Supabase Dashboard ΓåÆ Settings ΓåÆ API |
-| `DATABASE_URL` | PostgreSQL connection string | Supabase Dashboard ΓåÆ Settings ΓåÆ Database |
-| `GROQ_API_KEY` | Groq LLM API key | https://console.groq.com ΓåÆ API Keys |
+| `SUPABASE_URL` | Supabase project URL | Dashboard > Settings > API |
+| `SUPABASE_KEY` | Supabase anon/public key | Dashboard > Settings > API |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key | Dashboard > Settings > API |
+| `DATABASE_URL` | PostgreSQL connection string | Dashboard > Settings > Database |
+| `GROQ_API_KEY` | Groq LLM API key | https://console.groq.com > API Keys |
 
-### Optional Variables
+### Optional
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -737,18 +312,11 @@ npx http-server . -p 8080
 | `DEBUG` | `false` | Enable debug mode |
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `PORT` | `8000` | Backend port |
-| `WORKERS` | `4` | Number of workers |
-| `DEFAULT_LLM_MODEL` | `llama-3.3-70b-versatile` | LLM model to use |
+| `DEFAULT_LLM_MODEL` | `llama-3.3-70b-versatile` | LLM model |
 
+---
 
-
-# Check backend health
-curl http://localhost:8000/health
-```
-
-## ≡ƒº¬ Testing
-
-### Run Tests
+## Testing
 
 ```bash
 cd backend
@@ -756,216 +324,86 @@ cd backend
 # Run all tests
 pytest
 
-# Run with coverage
+# Run with coverage report
 pytest --cov=. --cov-report=html
 
 # Run specific test file
 pytest tests/test_agents_phase3.py
-
-# Run specific test
-pytest tests/test_agents_phase3.py::test_budget_agent
 ```
 
-### Test API Endpoints
+---
 
-```bash
-# Health check
-curl http://localhost:8000/health
+## Project Structure
 
-# Get transactions
-curl http://localhost:8000/transactions?user_id=YOUR_USER_ID
-
-# Create budget via AI
-curl -X POST http://localhost:8000/ai/chat \
-  -H "Content-Type: application/json" \
-  -d '{"query": "Create a budget for Food with 10000", "user_id": "YOUR_USER_ID"}'
+```
+fina/
+├── backend/
+│   ├── agents/          # 5 AI agents (Budget, Fraud, Risk, Investment, Insurance)
+│   ├── api/             # REST API endpoints
+│   ├── database/        # Supabase client and models
+│   ├── guardrails/      # Input/output validation
+│   ├── mcp/             # Model-Context-Protocol layers
+│   ├── ml/              # ML models (fraud, categorization, risk)
+│   ├── observability/   # Logging, metrics, tracing
+│   ├── orchestrator/    # Query planner, executor, synthesizer
+│   ├── rag/             # RAG pipeline (chunker, embedder, indexer, retriever)
+│   └── main.py          # FastAPI application entry point
+├── public/
+│   ├── css/             # Stylesheets
+│   ├── js/              # JavaScript (views, components, utils)
+│   └── index-new.html   # Main HTML
+├── docs/                # Documentation and architecture diagram
+├── docker-compose.yml   # Docker services
+├── Dockerfile           # Backend Docker image
+└── README.md
 ```
 
-## ≡ƒôÜ Documentation
+---
 
-Comprehensive documentation is available in the `docs/` directory:
+## Documentation
 
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - System design and components
-- **[Features Guide](docs/FEATURES.md)** - Complete feature documentation (40+ features)
-- **[API Reference](docs/API.md)** - REST API endpoints and schemas
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment instructions
-- **[Technical Deep Dive](docs/TECHNICAL.md)** - Backend, frontend, and agent workflows
+| Document | Description |
+|----------|-------------|
+| [Architecture Guide](docs/ARCHITECTURE.md) | System design and MCP/RAG/Agent details |
+| [Features Guide](docs/FEATURES.md) | Complete feature documentation (40+ features) |
+| [API Reference](docs/API.md) | REST API endpoints and schemas |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Production deployment instructions |
+| [Technical Deep Dive](docs/TECHNICAL.md) | Backend, frontend, and agent workflows |
+| [Groq Setup Guide](GROQ_SETUP_GUIDE.md) | Free LLM API setup |
 
-### Additional Guides
+---
 
-- **[Groq Setup Guide](GROQ_SETUP_GUIDE.md)** - Free LLM API setup
-
-
-
-## ≡ƒöì Troubleshooting
-
-### Backend won't start
+## Troubleshooting
 
 ```bash
-# Check Docker logs
+# Backend won't start
 docker logs fina-backend
 
-# Check if port 8000 is in use
-netstat -ano | findstr :8000  # Windows
-lsof -i :8000                 # Linux/Mac
-
-# Restart Docker
-docker-compose restart backend
-```
-
-### Frontend not loading
-
-```bash
-# Check if backend is running
-curl http://localhost:8000/health
-
-# Clear browser cache
-# Press Ctrl + Shift + R (hard refresh)
-
-# Check Docker logs
-docker logs fina-nginx
-```
-
-### Database connection fails
-
-```bash
-# Test Supabase connection
-curl https://YOUR_PROJECT_REF.supabase.co/rest/v1/
-
-# Check environment variables
-docker exec fina-backend env | grep SUPABASE
-
-# Verify credentials in Supabase dashboard
-```
-
-### "Module not found" errors
-
-```bash
-# Rebuild Docker image
-docker-compose up -d --build --force-recreate
-
-# Or reinstall dependencies locally
-cd backend
-pip install -r requirements.txt --force-reinstall
-```
-
-### Groq API rate limit
-
-```bash
-# Free tier limits:
-# - 30 requests per minute
-# - 6,000 tokens per minute
-# - 14,400 requests per day
-
-# Wait a minute and try again
-# Or upgrade to paid tier at https://console.groq.com
-```
-
-## ≡ƒ¢á∩╕Å Common Tasks
-
-### Update Dependencies
-
-```bash
-cd backend
-pip install -r requirements.txt --upgrade
-```
-
-### Clear Database
-
-```bash
-# Go to Supabase Dashboard ΓåÆ SQL Editor
-# Run: TRUNCATE TABLE transactions, budgets, risk_scores CASCADE;
-```
-
-### Reset Docker
-
-```bash
-# Stop and remove everything
-docker-compose down -v
-
-# Remove images
-docker rmi fina-backend fina-nginx
+# Port already in use
+netstat -ano | findstr :8000   # Windows
 
 # Rebuild from scratch
+docker-compose down -v
 docker-compose up -d --build
+
+# Check Groq rate limit
+docker logs fina-backend | grep "rate_limit"
 ```
 
-### View Metrics
+---
 
-1. Open Grafana: http://localhost:3000
-2. Login: admin/admin
-3. Add Prometheus data source: http://prometheus:9090
-4. Import dashboards from `docs/grafana/`
-
-## ≡ƒôè Project Structure
-
-```
-rag_p1/
-Γö£ΓöÇΓöÇ backend/              # Backend application
-Γöé   Γö£ΓöÇΓöÇ agents/          # AI agents
-Γöé   Γö£ΓöÇΓöÇ api/             # API endpoints
-Γöé   Γö£ΓöÇΓöÇ database/        # Database models
-Γöé   Γö£ΓöÇΓöÇ mcp/             # Model-Context-Protocol
-Γöé   Γö£ΓöÇΓöÇ ml/              # Machine learning
-Γöé   Γö£ΓöÇΓöÇ rag/             # RAG pipeline
-Γöé   Γö£ΓöÇΓöÇ tests/           # Test suites
-Γöé   ΓööΓöÇΓöÇ main.py          # FastAPI app
-Γö£ΓöÇΓöÇ public/              # Frontend
-Γöé   Γö£ΓöÇΓöÇ css/            # Styles
-Γöé   Γö£ΓöÇΓöÇ js/             # JavaScript
-Γöé   ΓööΓöÇΓöÇ index-new.html  # Main HTML
-Γö£ΓöÇΓöÇ docs/                # Documentation
-Γö£ΓöÇΓöÇ docker-compose.yml   # Docker services
-Γö£ΓöÇΓöÇ Dockerfile          # Docker image
-Γö£ΓöÇΓöÇ deploy.sh           # Deployment script
-ΓööΓöÇΓöÇ README.md           # This file
-```
-
-## ≡ƒñ¥ Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
-
-## ≡ƒôä License
-
-This project is licensed under the MIT License.
-
-## ≡ƒÖÅ Acknowledgments
-
-- **FastAPI** - Modern web framework
-- **Supabase** - Backend-as-a-Service
-- **Groq** - Fast LLM inference
-- **Docker** - Containerization
-- **Prometheus & Grafana** - Monitoring
-
-## ≡ƒô₧ Support
-
-- **Documentation**: See `docs/` folder
-- **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-- **Issues**: GitHub Issues
-
-## ≡ƒù║∩╕Å Roadmap
+## Roadmap
 
 - [ ] Mobile app (React Native)
 - [ ] Voice interface
 - [ ] Multi-currency support
 - [ ] Bank account integration
-- [ ] Advanced analytics dashboard
-- [ ] Social features (family budgets)
 - [ ] Cryptocurrency tracking
 - [ ] Tax optimization
+- [ ] Family/shared budgets
 
 ---
 
-**Built by LOGESHWAR**
+**Built by LOGESHWAR R**
 
-**Version**: 1.0.0  
-**Last Updated**: April 28, 2026  
-**Status**: Production Ready Γ£à
-
+**Version**: 1.2.0 | **Last Updated**: April 2026 | **Status**: Production Ready
