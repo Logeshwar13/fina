@@ -20,6 +20,89 @@ A comprehensive personal finance management platform powered by multi-agent AI s
 - **RAG Pipeline**: Context-aware responses using vector embeddings
 - **Observability**: Metrics, logging, and distributed tracing
 
+## 🏗️ Architecture Deep Dive
+
+### MCP (Model-Context-Protocol) Architecture
+
+FinA implements a true MCP architecture with three distinct layers:
+
+**1. Model Layer** (`backend/mcp/model.py`)
+- LLM integration supporting Groq (free!), OpenAI, and Anthropic
+- Response generation with temperature control
+- Embeddings generation for semantic search
+- Automatic fallbacks and token tracking
+
+**2. Context Layer** (`backend/mcp/context.py`)
+- FAISS vector database (1536 dimensions)
+- Semantic search with metadata filtering
+- Persistent storage for user data
+- Real-time context updates
+
+**3. Protocol Layer** (`backend/mcp/protocol.py` + `tools.py`)
+- 30+ registered tools for financial operations
+- Tool execution engine with error handling
+- Type-safe parameter validation
+- Automatic tool discovery
+
+### RAG (Retrieval-Augmented Generation) Pipeline
+
+FinA uses RAG to provide accurate, data-grounded responses:
+
+```
+User Query → Embed Query → Search Vectors → Retrieve Context → LLM + Context → Response
+```
+
+**How it works:**
+1. **Chunking**: Break transactions/budgets into searchable chunks
+2. **Embedding**: Convert text to 1536-dimensional vectors
+3. **Indexing**: Store in FAISS with metadata (user_id, category)
+4. **Retrieval**: Find top-5 most relevant items using semantic search
+5. **Generation**: LLM generates response using retrieved context
+
+**Data Sources Indexed:**
+- All user transactions
+- Budget limits and spending patterns
+- Insurance policies and coverage
+- Risk assessments and financial health data
+
+### Multi-Agent Orchestration
+
+Queries are intelligently routed to specialized agents:
+
+```
+User Query → Query Planner → Agent Selection → Parallel Execution → Response Synthesis
+```
+
+**Agent Capabilities:**
+- **Budget Agent**: Spending analysis, budget recommendations, overspending alerts
+- **Fraud Agent**: ML-based fraud detection, pattern analysis, security alerts
+- **Risk Agent**: Financial health scoring (0-100), risk factor analysis, recommendations
+- **Investment Agent**: Portfolio analysis, investment advice, risk-adjusted returns
+- **Insurance Agent**: Coverage gap analysis, policy recommendations, premium optimization
+
+**Orchestration Features:**
+- Intelligent query routing based on intent keywords
+- Parallel agent execution for complex queries
+- LLM-based response synthesis combining multiple agent outputs
+- Context sharing between agents for collaborative reasoning
+
+### Agentic Loop
+
+Each agent follows a 5-step reasoning cycle:
+
+1. **PLAN**: Analyze query, select tools, create execution strategy
+2. **ACT**: Execute tools, call APIs, gather data from database
+3. **OBSERVE**: Process results, structure data, extract insights
+4. **REFLECT**: Analyze observations, generate insights, identify patterns
+5. **RESPOND**: Format answer, add recommendations, apply guardrails
+
+**Example**: "Create a budget for Food with ₹15,000"
+- PLAN: Detect "create budget" intent, select `create_budget` tool
+- ACT: Execute `create_budget(category="Food", limit=15000)`
+- OBSERVE: Tool returns success, budget ID created
+- REFLECT: Budget created successfully, user can now track spending
+- RESPOND: "✅ Budget created! Food: ₹15,000/month. I'll help you track your spending."
+
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
