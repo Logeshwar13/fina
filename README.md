@@ -305,6 +305,299 @@ Open your browser and navigate to:
 4. Verify email (check Supabase Auth)
 5. Login and start using FinA!
 
+## 📖 User Guide
+
+### Getting Started
+
+#### 1. Sign Up & Login
+
+**Sign Up:**
+1. Open http://localhost in your browser
+2. Click the "Sign Up" button
+3. Fill in your details:
+   - Email address
+   - Password (minimum 8 characters)
+   - Name
+   - Monthly income (optional)
+4. Click "Create Account"
+5. Check your email for verification link (check Supabase Auth dashboard if using test mode)
+
+**Login:**
+1. Go to http://localhost
+2. Enter your email and password
+3. Click "Login"
+4. You'll be redirected to the Dashboard
+
+**Forgot Password?**
+- Click "Forgot Password" on login page
+- Enter your email
+- Check email for reset link
+
+#### 2. Dashboard Overview
+
+After logging in, you'll see the Dashboard with:
+
+- **Total Balance**: Your current financial position (Income - Expenses)
+- **Monthly Income**: Your total income for the month
+- **Monthly Expenses**: Your total spending for the month
+- **Spending by Category**: Pie chart showing expense breakdown
+- **Monthly Trends**: Line chart showing income vs expenses over time
+- **Recent Transactions**: List of your latest transactions
+
+**Navigation Menu:**
+- 🏠 Dashboard - Overview of your finances
+- 💰 Transactions - Manage all transactions
+- 📊 Budget - Set and track budgets
+- 🤖 AI Chat - Talk to your AI financial advisor
+- 🛡️ Fraud Detection - Security alerts
+- 📈 Risk Assessment - Financial health score
+- 🏥 Insurance - Manage insurance policies
+
+#### 3. Managing Transactions
+
+**Add a Transaction:**
+1. Click "Transactions" in the menu
+2. Click "Add Transaction" button
+3. Fill in details:
+   - Amount (e.g., 500)
+   - Type: Income or Expense
+   - Category: Select from dropdown (Food, Transport, Shopping, etc.)
+   - Description: What was it for? (e.g., "Lunch at Starbucks")
+   - Date: When did it happen?
+4. Click "Save"
+
+**Edit a Transaction:**
+1. Find the transaction in the list
+2. Click the "Edit" button (pencil icon)
+3. Update the details
+4. Click "Save Changes"
+
+**Delete a Transaction:**
+1. Find the transaction in the list
+2. Click the "Delete" button (trash icon)
+3. Confirm deletion
+
+**Using AI to Add Transactions:**
+1. Go to "AI Chat"
+2. Type: "Add a transaction of ₹500 for food at Starbucks"
+3. AI will create the transaction for you!
+
+#### 4. Setting Up Budgets
+
+**Create a Budget:**
+1. Click "Budget" in the menu
+2. Click "Add Budget" button
+3. Select category (Food, Transport, Shopping, etc.)
+4. Enter monthly limit (e.g., ₹15,000)
+5. Click "Save"
+
+**Using AI to Create Budgets:**
+1. Go to "AI Chat"
+2. Type: "Create a budget for Food with ₹15,000"
+3. AI will set up the budget for you!
+
+**Track Budget Progress:**
+- Green: Under 50% spent ✅
+- Yellow: 50-80% spent ⚠️
+- Red: Over 80% spent 🚨
+
+**Edit/Delete Budgets:**
+- Click the edit icon to modify budget limits
+- Click delete icon to remove a budget
+
+#### 5. Using AI Chat
+
+The AI Chat is your personal financial advisor powered by 5 specialized agents.
+
+**How to Use:**
+1. Click "AI Chat" in the menu
+2. Type your question in the chat box
+3. Press Enter or click Send
+4. AI will analyze your data and respond
+
+**Example Queries:**
+
+**Budget Questions:**
+- "How much did I spend on food last month?"
+- "Create a budget for Entertainment with ₹10,000"
+- "Am I overspending on shopping?"
+- "Show my spending trends"
+
+**Transaction Questions:**
+- "Add a transaction of ₹650 for food at Alzyd"
+- "Edit the last transaction to income"
+- "Show my recent expenses"
+- "What did I spend on transport this week?"
+
+**Fraud Detection:**
+- "Check if my last transaction is suspicious"
+- "Are there any unusual transactions?"
+- "Flag transaction #123 as fraud"
+
+**Risk Assessment:**
+- "What's my financial health score?"
+- "Am I financially healthy?"
+- "What are my risk factors?"
+- "How can I improve my financial health?"
+
+**Investment Advice:**
+- "Should I invest ₹50,000?"
+- "What's my investment capacity?"
+- "Recommend an investment portfolio"
+
+**Insurance Planning:**
+- "Do I need life insurance?"
+- "Calculate my insurance needs"
+- "What insurance coverage do I need?"
+
+**Chat Features:**
+- 💬 Multi-turn conversations (AI remembers context)
+- 📊 Data-grounded responses (uses your actual data)
+- 🎯 Actionable recommendations
+- 📝 Chat history saved automatically
+- 🗑️ Clear history button to start fresh
+
+#### 6. Fraud Detection
+
+**View Fraud Alerts:**
+1. Click "Fraud Detection" in the menu
+2. See list of flagged transactions
+3. Review suspicious patterns
+
+**How Fraud Detection Works:**
+- ML model analyzes each transaction
+- Flags unusual amounts, locations, or patterns
+- Assigns fraud score (0-100%)
+- High scores trigger alerts
+
+**Mark Transaction as Safe:**
+1. Find the flagged transaction
+2. Click "Mark as Safe"
+3. Transaction will be unflagged
+
+#### 7. Risk Assessment
+
+**Check Your Financial Health:**
+1. Click "Risk Assessment" in the menu
+2. View your risk score (0-100)
+3. See your grade (A, B, C, D, F)
+4. Review risk factors
+
+**Risk Factors Analyzed:**
+- Debt-to-income ratio
+- Emergency fund adequacy
+- Income stability
+- Spending patterns
+- Budget adherence
+
+**Improve Your Score:**
+- Follow AI recommendations
+- Build emergency fund
+- Reduce debt
+- Stick to budgets
+- Increase income
+
+#### 8. Insurance Management
+
+**Add Insurance Policy:**
+1. Click "Insurance" in the menu
+2. Click "Add Policy"
+3. Fill in details:
+   - Policy type (Health, Life, Property, Vehicle)
+   - Provider name
+   - Premium amount
+   - Coverage amount
+   - Start and end dates
+4. Click "Save"
+
+**Calculate Insurance Needs:**
+1. Click "Calculate Coverage"
+2. Fill in the assessment form:
+   - Personal details (age, dependents)
+   - Financial info (income, debts)
+   - Lifestyle factors
+   - Health conditions
+3. Click "Calculate"
+4. View recommended coverage amounts
+
+**Track Policies:**
+- View all active policies
+- See premium reminders
+- Check expiry dates
+- Update policy details
+
+#### 9. Troubleshooting
+
+**Page Not Loading?**
+- Press `Ctrl + Shift + R` (hard refresh) to clear cache
+- Check if backend is running: http://localhost:8000/health
+- Restart Docker: `docker-compose restart`
+
+**AI Chat Not Responding?**
+- Check your internet connection
+- Verify Groq API key is set in `backend/.env`
+- Check backend logs: `docker logs fina-backend --follow`
+- Groq free tier has limits (100,000 tokens/day)
+
+**Transactions Not Saving?**
+- Check Supabase connection
+- Verify `DATABASE_URL` in `backend/.env`
+- Check browser console for errors (F12)
+- Try hard refresh: `Ctrl + Shift + R`
+
+**Login Issues?**
+- Verify email is confirmed in Supabase Auth dashboard
+- Check password is correct (minimum 8 characters)
+- Clear browser cookies and try again
+- Check backend logs for authentication errors
+
+**Budget Not Updating?**
+- Hard refresh the page: `Ctrl + Shift + R`
+- Check if transactions are in the correct category
+- Verify budget was created successfully
+- Check browser console for errors
+
+**Charts Not Showing?**
+- Ensure you have transactions in the database
+- Try different date ranges
+- Hard refresh: `Ctrl + Shift + R`
+- Check if data is loading in Network tab (F12)
+
+**General Tips:**
+- 🔄 **Always try hard refresh first**: `Ctrl + Shift + R` (Windows) or `Cmd + Shift + R` (Mac)
+- 🔍 **Check browser console**: Press F12 to see error messages
+- 📋 **Check backend logs**: `docker logs fina-backend --follow`
+- 🔌 **Verify services are running**: `docker ps`
+- 🔁 **Restart if needed**: `docker-compose restart`
+
+#### 10. Best Practices
+
+**For Accurate AI Responses:**
+- Add transactions regularly
+- Use consistent category names
+- Provide detailed descriptions
+- Keep budgets up to date
+
+**For Better Financial Health:**
+- Set realistic budgets
+- Track all expenses
+- Review spending weekly
+- Follow AI recommendations
+- Build emergency fund (3-6 months expenses)
+
+**For Security:**
+- Use strong passwords
+- Don't share your login credentials
+- Review fraud alerts regularly
+- Log out when done
+- Keep your email secure
+
+**For Performance:**
+- Clear chat history occasionally
+- Archive old transactions
+- Keep browser updated
+- Use hard refresh when needed
+
 ## 🔧 Development Setup
 
 ### Running Locally (Without Docker)
